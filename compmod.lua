@@ -3,7 +3,7 @@
 PLUGIN_NAME = "Competitive Assaultcube Plugin"
 PLUGIN_AUTHOR = "Padfoot"
 PLUGIN_VERSION = "0.1"
-
+--what
 include("ac_server")
 
 function slice(array, S, E)
@@ -34,7 +34,7 @@ function inter(time, map)
 		shuffleteams()
 		count = count + 1
 		end
-	say("Teams have been shuffled")
+	say("Teams have been shuffled"..a.."times.")
 	setautoteam(0)
 	say("AutoTeam has been turned off")
 	match = true
@@ -43,6 +43,7 @@ function inter(time, map)
 end
 
 function match(time, map)
+	getPlayers()
 	setautoteam(0)
 	say("AutoTeam has been turned off")
 	match = true
@@ -53,24 +54,30 @@ end
 function getPlayers()
 	for player_cn in rvsf() do
 		--add the player to the nplayers array
-		table.insert(nplayers, player_cn)
+		table.insert(nplayers, tostring(player_cn))
 	end
 	for player_cn in cla() do
-		--add the player to the nplayers array/table
-		table.insert(nplayers, player_cn)
+		--add the player to nplayers
+		table.insert(nplayers, tostring(player_cn))
+	end
+	-- Get number of players
+	ppl = table.getn(nplayers)
+	numplay = ppl
+	say(numplay)
 end
 
 function setready(cn)
-	table.remove(nplayers, cn)
-	table.insert(rplayers, cn)
-	string = getname(cn).."is now ready."
+	table.remove(nplayers, tostring(cn))
+	say("There are ".." new")
+	string = getname(cn).." is now \fLready."
 	say(string)
 end
 
-function notready(player)
-	table.remove(rplayers, cn)
-	table.insert(nplayers, cn)
-	string = getname(cn)..."is not ready."
+function notready(cn)
+	table.insert(nplayers, tostring(cn))
+	say(table.getn(nplayers))
+	string = getname(cn).." is \f3not \f3ready."
+	say(string)
 end
 
 function say(text, cn)
@@ -84,26 +91,23 @@ end
 --	if co
 
 --Variables go here
---rplayers = {} --instead of having an array of both not ready players and ready players, I decided to only have not ready players, as almost the same effect can be achieved.
 nplayers = {}
 numplay = 0
 match = false
 --Commands go here :)
--- Paramaters are {admin required, show message}
 commands =
 {
-  [".ready"] =
-  {
+  [".ready"] = {
 	function (cn)
-		if nplayers[cn] ~= nil then
+		if nplayers[tostring(cn)] ~= nil then
 			setready(cn)
 		end
 	end
-  };
+	};
 
 	[".notready"] = {
-		function(cn)
-			if nplayers[cn] == nil then
+		function (cn)
+			if nplayers[tostring(cn)] == nil then
 				notready(cn)
 			end
 		end
@@ -112,11 +116,11 @@ commands =
 
 	[".inter"] = {
 	 function (cn, args)
+	 	say(table.getn(nplayers))
 		if table.getn(nplayers) == 0 then
-			nargs = split(args, " ")
-			inter(nargs[2], nargs[1])
-    else
-      print("Not all players are ready. The player(s) not ready is/are"..)
+			inter(args[2], args[1])
+		else
+			say("Not all players are ready!")
 		end
 	 end
 
@@ -125,8 +129,9 @@ commands =
 	[".match"] = {
 	 function (cn, args)
 		if table.getn(nplayers) == 0 then
-			nargs = split(args, " ")
-			match(nargs[2], nargs[1])
+			match(args[2], args[1])
+		else
+			say("Not all players are ready!")
 		end
 	 end
 	};
@@ -134,14 +139,18 @@ commands =
 
 --Handlers
 function onPlayerSayText(cn, text)
-  	texta = split(text, " ")
-	text2 = string.format("SCLog: Player %s says: %s. Their IP is: %s",getname(cn), texta ,getip(cn))
+	text2 = string.format("SCLog: Player %s says: %s. Their IP is: %s",getname(cn), text ,getip(cn))
 	logline(4, text2)
 
 	local parts = split(text, " ")
-	local command, args = parts[1], slice(parts, 2)
-	local callback = commands[command][1]
+	if table.getn(parts) == 1 then
+		command = parts[1]
+	else
+		command, args = parts[1], slice(parts, 2)
+	end
+
 	if commands[command] ~= nil then
+		local callback = commands[command][1]
         -- If there is a command there, carry out the command
         callback(cn, args)
     end
@@ -189,16 +198,29 @@ end
 function onMapEnd()
 	--Reset all of the values
 	nplayers = {}
-	rplayers = {}
 	numplay = 0
 	match = false
 end
-onPlayerTeamChange(cn, team, reason)
+
+function onMapChange(map, mode)
+	getPlayers()
+end
+
+function onPlayerTeamChange(cn, team, reason)
 	--Stop people from changing if they are playing a match
-	if match == true
-		if team == 1 or team == 0
-			say(getname(cn)..", they are playing a match. You can't join.")
-			setteam(cn, 4, 3)
+	if match == true then
+		if team == 1 or team == 0 then
+			say(getname(cn)..", they are playing a match. You can't join.", cn)
+			setteam(cn, 4, 1)
+			setteam(cn, 4, 1)
+			setteam(cn, 4, 1)
+			setteam(cn, 4, 1)
 		end
 	end
+end
+
+function onPlayerConnect(cn)
+   say("\f4Hello \fR" .. getname(cn) .. "!")
+-- say("\fR [SERVER INFO]" .. getname(cn) .. "\fR connected!!! with ip \f4" .. getip(cn) .. "")
+setautoteam(false)
 end
